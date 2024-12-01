@@ -1,0 +1,84 @@
+---
+title: "Data606: Final Project"
+author: "Anthony Josue Roman"
+format: html
+editor: visual
+---
+
+```{r include=FALSE}
+library(readr)
+library(RCurl)
+library(stringr)
+library(dplyr)
+library(tidyr)
+library(tidyverse)
+library(ggplot2)
+library(knitr)
+library(kableExtra)
+library(tidyverse)
+library(httr)
+library(jsonlite)
+```
+
+This project will use the following packages:
+
+```{r eval=FALSE}
+library(readr)
+library(RCurl)
+library(stringr)
+library(dplyr)
+library(tidyr)
+library(tidyverse)
+library(ggplot2)
+library(knitr)
+library(kableExtra)
+library(tidyverse)
+library(httr)
+library(jsonlite)
+```
+
+# Abstract
+
+Astronomy allows us to explore the structure, dynamics, and characteristics of our galaxy. This project utilizes data from the European Space Agency's Gaia mission to analyze stellar distributions and kinematics within the Milky Way. By leveraging statistical and visualization techniques, the project aims to uncover patterns in stellar luminosity and motion, providing insights into the galaxy's structure. The study outlines the steps taken from data acquisition and preparation to exploratory analysis and inference, concluding with key findings about stellar distributions. This work demonstrates the power of Gaia's precise astrometric data in advancing our understanding of the Milky Way.
+
+
+--- 
+
+
+# Introduction
+
+The Milky Way, our home galaxy, has captivated astronomers for centuries. Gaia, a European Space Agency mission, has provided unprecedented data to map its stars and dynamics. This project uses Gaia data to:
+
+- Investigate the spatial and kinematic distribution of stars within the Milky Way.
+- Explore relationships between stellar properties such as parallax, magnitude, and proper motion.
+
+By analyzing these distributions, we aim to gain a deeper understanding of the galaxy's structure and its diverse stellar populations.
+
+
+---
+
+# Data
+
+The following project will utilize a dataset I have obtained from Gaia. The datasets will be from [Gaia Archive](https://gea.esac.esa.int/archive/). The dataset will be split into three files since the filesize is roughly 3GB. The data will be in the form of CSV files. The data will be stored in a local directory and loaded into R for analysis. The data will be cleaned and transformed as needed to perform the analysis. The data will contain information about stars in the Milky Way, including their positions, parallaxes, proper motions, and magnitudes. The data will be used to explore the spatial and kinematic distribution of stars in the Milky Way and to investigate relationships between stellar properties. The data will be visualized using plots and graphs to help interpret the results. The data will be analyzed using statistical techniques to identify patterns and relationships in the data. The results will be summarized and discussed in the final report. The data will be used to answer the research questions and achieve the project objectives.
+
+
+# Exploratory Data Analysis
+
+
+
+# Inference
+
+
+
+# Conclusion
+
+
+
+# References
+
+- Gaia Collaboration, Brown, A. G. A., Vallenari, A., Prusti, T., de Bruijne, J. H. J., Babusiaux, C., Bailer-Jones, C. A. L., et al. (2018). Gaia Data Release 2. Summary of the contents and survey properties. Astronomy & Astrophysics, 616, A1. doi:10.1051/0004-6361/201833051
+
+- Gaia Collaboration, Prusti, T., de Bruijne, J. H. J., Brown, A. G. A., Vallenari, A., Babusiaux, C., Bailer-Jones, C. A. L., et al. (2016). The Gaia mission. Astronomy & Astrophysics, 595, A1. doi:10.1051/0004-6361/201629272
+
+- European Space Agency. Gaia Data Archive. [https://gea.esac.esa.int/archive/](https://gea.esac.esa.int/archive/)
+
