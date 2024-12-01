@@ -18,6 +18,7 @@ library(kableExtra)
 library(tidyverse)
 library(httr)
 library(jsonlite)
+library(data.table)
 ```
 
 This project will use the following packages:
@@ -35,6 +36,7 @@ library(kableExtra)
 library(tidyverse)
 library(httr)
 library(jsonlite)
+library(data.table)
 ```
 
 # Abstract
@@ -59,20 +61,87 @@ By analyzing these distributions, we aim to gain a deeper understanding of the g
 
 # Data
 
-The following project will utilize a dataset I have obtained from Gaia. The datasets will be from [Gaia Archive](https://gea.esac.esa.int/archive/). The dataset will be split into three files since the filesize is roughly 3GB. The data will be in the form of CSV files. The data will be stored in a local directory and loaded into R for analysis. The data will be cleaned and transformed as needed to perform the analysis. The data will contain information about stars in the Milky Way, including their positions, parallaxes, proper motions, and magnitudes. The data will be used to explore the spatial and kinematic distribution of stars in the Milky Way and to investigate relationships between stellar properties. The data will be visualized using plots and graphs to help interpret the results. The data will be analyzed using statistical techniques to identify patterns and relationships in the data. The results will be summarized and discussed in the final report. The data will be used to answer the research questions and achieve the project objectives.
+The following project will utilize a dataset I have obtained from Gaia. The datasets will be from [Gaia Archive](https://gea.esac.esa.int/archive/). The dataset will two files. The data will be in the form of CSV files. The data will be stored in a local directory and loaded into R for analysis. The data will be cleaned and transformed as needed to perform the analysis. The data will contain information about stars in the Milky Way, including their positions, parallaxes, proper motions, and magnitudes. The data will be used to explore the spatial and kinematic distribution of stars in the Milky Way and to investigate relationships between stellar properties. The data will be visualized using plots and graphs to help interpret the results. The data will be analyzed using statistical techniques to identify patterns and relationships in the data. The results will be summarized and discussed in the final report. The data will be used to answer the research questions and achieve the project objectives.
 
 
-```{r dataextraction}
+```{r dataextraction, results='hide', message=FALSE, warning=FALSE}
 
-# Load the data from the CSV files
+# Load Gaia data
+rawgaia <- getURL("https://raw.githubusercontent.com/spacerome/Data607_Project_2/refs/heads/main/gaiadata.csv")
+
+rawgaia2 <- getURL("https://raw.githubusercontent.com/spacerome/Data607_Project_2/refs/heads/main/gaiadata2.csv")
+
+# Prepare the data
+
+gaiadf <- data.frame(read.csv(text=rawgaia, sep= "\t", stringsAsFactors = FALSE, check.names = FALSE))
+
+gaiadf2 <- data.frame(read.csv(text=rawgaia2, sep= "\t", stringsAsFactors = FALSE, check.names = FALSE))
+
+summary(gaiadf)
+
+summary(gaiadf2)
+```
+## Data Preparation
+
+The data preparation phase involves cleaning and transforming the raw data to make it suitable for analysis. This includes handling missing values, removing duplicates, and transforming variables as needed. We will also merge the two datasets to create a single dataset for analysis.
+
+```{r datacleaning}
+
+gaiadf_tidy <- gaiadf %>%
+  pivot_longer(
+    cols = -SOURCE_ID, 
+    names_to = c("measurement_type", "band", "replicate"),
+    names_pattern = "(\\w+)_(\\w+)_(\\d)", 
+    values_to = "value"
+  ) %>%
+  filter(!is.na(value))
+
+head(gaiadf_tidy)
+
+gaiadf2_tidy <- gaiadf2 %>%
+  pivot_longer(
+    cols = -source_id, 
+    names_to = "attribute", 
+    values_to = "value"     
+  ) %>%
+  filter(!is.na(value)) 
+
+head(gaiadf2_tidy)
+
+gaiadf_tidy %>%
+  group_by(measurement_type, band) %>%
+  summarize(
+    mean_value = mean(as.numeric(value), na.rm = TRUE),
+    sd_value = sd(as.numeric(value), na.rm = TRUE),
+    min_value = min(as.numeric(value), na.rm = TRUE),
+    max_value = max(as.numeric(value), na.rm = TRUE),
+    count = n()
+  ) %>%
+  arrange(measurement_type, band)
+
+gaiadf2_tidy %>%
+  group_by(attribute) %>%
+  summarize(
+    mean_value = mean(as.numeric(value), na.rm = TRUE),
+    sd_value = sd(as.numeric(value), na.rm = TRUE),
+    min_value = min(as.numeric(value), na.rm = TRUE),
+    max_value = max(as.numeric(value), na.rm = TRUE),
+    count = n()
+  ) %>%
+  arrange(attribute)
 
 ```
 
 # Exploratory Data Analysis
 
-The data will be explored using various statistical and visualization techniques to identify patterns and relationships in the data. The data will be visualized using plots and graphs to help interpret the results. The data will be analyzed using statistical techniques to identify patterns and relationships in the data. The results will be summarized and discussed in the final report. The data will be used to answer the research questions and achieve the project objectives.
+
+
+# Analysis
+
+
 
 # Inference
+
 
 
 # Conclusion
