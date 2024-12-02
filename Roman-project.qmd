@@ -1,11 +1,16 @@
 ---
 title: "Data606: Final Project"
 author: "Anthony Josue Roman"
-format: html
+format:
+  html:
+    toc: true
+    toc-depth: 3   # Adjust the depth as needed
+    toc-location: left  # Options: left, right, or inline (default is inline)
 editor: visual
 ---
 
 ```{r include=FALSE}
+library(rsconnect)
 library(readr)
 library(RCurl)
 library(stringr)
@@ -24,28 +29,9 @@ library(plotly)
 library(cluster)
 ```
 
-This project will use the following packages:
-
--   `readr` for reading in data.
--   `RCurl` for reading in data from URLs.
--   `stringr` for string manipulation.
--   `dplyr` for data manipulation.
--   `tidyr` for data tidying.
--   `tidyverse` for data manipulation and visualization.
--   `ggplot2` for data visualization.
--   `kableExtra` for creating tables.
--   `httr` for working with HTTP requests.
--   `jsonlite` for working with JSON data.
--   `data.table` for data manipulation.
--   `DT` for interactive tables.
--   `plotly` for interactive plots.
--   `cluster` for clustering analysis.
-
 # Abstract
 
 Astronomy allows us to explore the structure, dynamics, and characteristics of our galaxy. This project utilizes data from the European Space Agency's Gaia mission to analyze stellar distributions and kinematics within the Milky Way. By leveraging statistical and visualization techniques, the project aims to uncover patterns in stellar luminosity and motion, providing insights into the galaxy's structure. The study outlines the steps taken from data acquisition and preparation to exploratory analysis and inference, concluding with key findings about stellar distributions. This work demonstrates the power of Gaia's precise astrometric data in advancing our understanding of the Milky Way. The insights derived from this analysis will advance our understanding of the Milky Way's stellar populations and dynamics.
-
-------------------------------------------------------------------------
 
 # Introduction
 
@@ -56,7 +42,7 @@ The Milky Way, our home galaxy, has captivated astronomers for centuries. Gaia, 
 
 By analyzing these distributions, we aim to gain a deeper understanding of the galaxy's structure and its diverse stellar populations.
 
-------------------------------------------------------------------------
+The research question for this project is: **How do stellar kinematics and luminosity distributions vary based on the position within the Milky Way galaxy, as observed in the Gaia catalog?**
 
 # Methods
 
@@ -180,6 +166,39 @@ magnitude_parallax <- gaiadf_tidy %>%
 
 ```
 
+```{r hr}
+
+gaiadf_hr <- gaiadf2_tidy %>%
+  pivot_wider(names_from = attribute, values_from = value) %>%
+  mutate(
+    parallax = as.numeric(parallax),
+    phot_g_mean_mag = as.numeric(phot_g_mean_mag),
+    phot_bp_mean_mag = as.numeric(phot_bp_mean_mag),
+    phot_rp_mean_mag = as.numeric(phot_rp_mean_mag),
+    distance_pc = 1000 / parallax, # Convert parallax to distance in parsecs
+    absolute_magnitude = phot_g_mean_mag - 5 * log10(distance_pc) + 5, # Absolute magnitude
+    color_index = phot_bp_mean_mag - phot_rp_mean_mag # BP-RP color index
+  ) %>%
+  filter(!is.na(absolute_magnitude), !is.na(color_index), distance_pc > 0)
+
+# Ensure parallax is numeric and filter valid values
+gaiadf2 <- gaiadf2 %>%
+  mutate(parallax = as.numeric(parallax),
+         phot_g_mean_mag = as.numeric(phot_g_mean_mag),
+         phot_bp_mean_mag = as.numeric(phot_bp_mean_mag),
+         phot_rp_mean_mag = as.numeric(phot_rp_mean_mag)) %>%
+  filter(!is.na(parallax), parallax > 0)
+
+# Calculate distance in parsecs and absolute magnitude
+gaiadf2 <- gaiadf2 %>%
+  mutate(
+    distance_pc = 1000 / parallax,
+    absolute_magnitude = phot_g_mean_mag - 5 * log10(distance_pc) + 5,
+    color_index = phot_bp_mean_mag - phot_rp_mean_mag
+  )
+
+```
+
 # Exploratory Data Analysis
 
 The exploratory data analysis phase involves visualizing the data to identify patterns, trends, and relationships between variables. This phase provides insights into the distribution of stellar properties and helps guide further analysis. We will explore the distribution of parallax, magnitude, right ascension, and declination values to understand the characteristics of stars in the Milky Way. The analysis will include histograms, boxplots, and scatter plots to visualize the data and identify patterns in the distributions. The findings from this analysis will inform the subsequent inference phase, where we will draw conclusions based on the data. The exploratory data analysis will provide insights into the spatial and kinematic distribution of stars in the Milky Way and help identify relationships between stellar properties. The visualizations will help interpret the data and guide further analysis.
@@ -202,6 +221,8 @@ gaiadf_tidy %>%
 ```
 
 **Findings:** From this we can tell the mean declination value is consistent across the all three bands, with a mean of approximately `-66.2` and a standard deviation of about `2.69`. The Magnitude values slightly differ across the bands, with `bp` having the tightest mean magnitude of `19.2`, followed by `g` with a mean magnitude of `18.5`, and `rp` has a mean magnitude of `17.7`. This is expected as the Blue Photometer band is usually more sensitive to fainter objects. The mean parallax value is `1.01` for all bands, which indicates that the stars in `gaiadf_tidy` have similar parallax values. The high standard deviation of `1.39` means that there are a broad range of distances which is expected. Lastly, for right ascension is consistent across all bansds with a mean of `58.1`, and a high standard deviation of `9.8` suggests a wider spread of values.
+
+### Distribution of Measurements by Band and Type
 
 ```{r gdftidyhistogram}
 ggplot(gaiadf_tidy, aes(x = band, y = as.numeric(value), fill = band)) +
@@ -232,6 +253,8 @@ gaiadf2_tidy %>%
 
 **Findings:** The Positional Attributes of Right Ascension and Declination show that `ra` ranges from `0.398` to `360` degrees, which covers the entire sky, and also means `gaiadf2_tidy` covers the full range of the celestial sphere, and `dec` ranges from `-83.7` to `87.0` degrees, which shows that the stars in `gaiadf2_tidy` spread across both hemispheres, which covers a broad range of the sky, with an average value close to zero, a mean of `-3.43`. This data suggests that there is a nearly even distribution of stars above and below the celestial equator. The Magnitude for the `bp` band has a mean of `4.4` and a slightly higher standard deviation of `0.707`, which indicates a moderate range of brightness values in this band. The `g` band has a mean magnitude of `3.8` which has a standard deviation of `0.534` and indicates that most of the stars are consistently bright in the `g` band. The `rp` band has a mean magnitude of `3.28` which indicates that the stars appear brightest in the red band on average. The standard deviation of the `rp` band is `0.610` which indicates a wider spread of brightness in the `rp` band. The difference in mean magnitudes is expected as the sensitivity varies within the three bands. Also stars are fainter in the `bp` band and brighter in the `rp` band, since the `bp` band is more sensitive to bluer light, and this is emitted less by most stars compared to redder light, and also since the universe is expanding light tends to become more red-shifted as the distance increases. To explain the proper motion values, the mean of `pmra`, which is `5.69`, and the `pmdec` is `-27.1`, this suggests there is a slight bias in motion towards the west and towards the south. This may indicate a systemic trend in this data, where the distribution of the stars' velocities are relative to the Earth's motion. The parallax values indicate a mean parallax of `18.3` which if you want to calculate the distance (`1/parallax`) you will get `0.055` parsecs (0.18 light years) which indicates very close stars. The standard deviation is quite large which is `26.1` and the range of parallax values is `0.119` to `311`, which shows that the stars vary at different distances, and the high parallax values indicates that there is a presence of very nearby stars, which are potentially within our solar neighborhood.
 
+### Distribution of Attributes
+
 ```{r gdf2hist}
 ggplot(gaiadf2_tidy, aes(x = as.numeric(value), fill = attribute)) +
   geom_histogram(binwidth = 0.5, color = "black", alpha = 0.6) +
@@ -244,6 +267,8 @@ ggplot(gaiadf2_tidy, aes(x = as.numeric(value), fill = attribute)) +
 ```
 
 **Findings:** To summarize this, the `dec` part suggests the distribution is relatively uniform as mentioned before. This suggests that the stars are evenly distributed across the northern and southern hemispheres. The `ra` is uniformly distributed across the entire range of `0` to `360` degrees, which confirms that the stars are spread evenly across the sky in `ra`. The mean magnitudes are showing near-normal distributions and as mentioned previously it supports the explanation that `rp` has the brightest stars. The parallax is highly right-skewed with most values clustered near zero and a few extreme values up to `300`. This indicates most stars are far away, and very few close stars having high parallax values. The Proper motion (`pmra` and `pmdec`) show it is right-skewed with large tails, which indicates a few stars with very high proper motion, and the peaks near zero suggests that most stars have a low proper motion, **but** there are significant outliers.
+
+### Distribution of Stellar Magnitudes
 
 ```{r magnitudehist}
 
@@ -296,7 +321,7 @@ plot_ly(data = gaia_reshaped,
 
 ```
 
-**Findings:** The 3D scatter plot shows the distribution of stars in the Milky Way based on their right ascension, declination, and parallax values. The plot reveals a uniform distribution of stars across the celestial sphere, with no apparent clustering or patterns. The color scale represents the parallax values, with brighter colors indicating higher parallax values and closer stars. The plot provides a visual representation of the spatial distribution of stars in the Milky Way, highlighting the diversity of stellar populations across the sky.
+**Findings:** The 3D Scatterplot utilizing `gaia_reshaped` shows the distribution of stars in the Milky Way based on their right ascension, declination, and parallax values. The plot reveals a cluster of stars around the origin of `(0,0)` which indicates most stars have a relatively low proper motion in both directions. This is mostly because most of the stars in the sky are moving very slowly relatively to the position of our planet (can go into further detail if needed). There are outliers here where stars are scattered far away from the central cluster, which indicates very high proper motion values in either the right ascension, declination, or both. These outliers can represent stars that are moving rapidly across the sky, which may be nearby high-velocity stars, or binary systems.
 
 ```{r 3dscatter2}
 
@@ -317,6 +342,8 @@ plot_ly(data = gaiadf2_tidy,
 ```
 
 **Findings:** The 3D scatter plot shows the distribution of stars in the Milky Way based on their right ascension, declination, and parallax values. The plot reveals a uniform distribution of stars across the celestial sphere, with no apparent clustering or patterns. The color scale represents the parallax values, with brighter colors indicating higher parallax values and closer stars. The plot provides a visual representation of the spatial distribution of stars in the Milky Way, highlighting the diversity of stellar populations across the sky.
+
+### Proper Motion and Parallax
 
 ```{r gdf2ppm}
 # Scatter plot of Proper Motion in RA vs Dec
@@ -351,9 +378,35 @@ ggplot(parallax_magnitude, aes(x = as.numeric(parallax), y = as.numeric(phot_g_m
 
 **Findings:** This scatterplot where it compares the parallax of stars vs the G-Band Magnitude indicates that most of the stars are distant (low parallax) as they are mostly clustered close to zero, and have similar magnitudes in the g-band. There are a few closer stars (high parallax) that appear much brighter. This pattern is consistent with the explanation that stars become fainter with increasing distance.
 
+
+```{r propermotion}
+
+ggplot(gaiadf2_tidy %>% filter(attribute %in% c("pmra", "pmdec")), 
+       aes(x = as.numeric(value))) +
+  geom_histogram(binwidth = 50, fill = "#69b3a2", color = "black", alpha = 0.8) +
+  facet_wrap(~attribute, scales = "free_y", labeller = as_labeller(c(pmra = "Proper Motion RA (mas/year)", 
+                                                                    pmdec = "Proper Motion Dec (mas/year)"))) +
+  labs(
+    title = "Distribution of Proper Motion",
+    x = "Proper Motion (mas/year)",
+    y = "Frequency"
+  ) +
+  theme_minimal(base_size = 14) +
+  theme(
+    plot.title = element_text(hjust = 0.5, face = "bold"),
+    axis.title = element_text(face = "bold"),
+    strip.text = element_text(size = 12, face = "bold", color = "white"),
+    strip.background = element_rect(fill = "#6c757d")
+  )
+
+
+```
+
+**Findings:** The histograms show the distribution of proper motion values for the `pmra` and `pmdec` attributes. The `pmra` histogram has a peak around `0` mas/year, indicating that most stars have low proper motion in the right ascension direction. The `pmdec` histogram has a peak around `-25` mas/year, suggesting that most stars have low proper motion in the declination direction. The histograms provide insights into the distribution of proper motion values for stars in the Milky Way, highlighting the variability in their apparent motion across the sky.
+
 # Inference
 
-The inference phase involves analyzing relationships between stellar properties and drawing conclusions based on the data. We will explore the correlation between parallax and magnitude, as well as proper motion and parallax, to understand the relationships between these properties. This analysis will provide insights into the physical properties of stars in the Milky Way and their distribution in space. We will also perform k-means clustering to identify distinct clusters of stars based on their positions in the sky. The clustering analysis will help identify patterns in the spatial distribution of stars and reveal regions of the sky where stars are more densely concentrated. Additionally, we will conduct an ANOVA test to determine if there are significant differences in mean magnitudes across the `bp`, `g`, and `rp` bands. The results of these analyses will provide valuable insights into the relationships between stellar properties and the spatial distribution of stars in the Milky Way. The findings will help us draw conclusions about the characteristics of stars in the galaxy and their distribution in space. The inference phase will provide insights into the physical properties of stars in the Milky Way and their spatial distribution, helping us understand the structure and dynamics of the galaxy. 
+The inference phase involves analyzing relationships between stellar properties and drawing conclusions based on the data. We will explore the correlation between parallax and magnitude, as well as proper motion and parallax, to understand the relationships between these properties. This analysis will provide insights into the physical properties of stars in the Milky Way and their distribution in space. We will also perform k-means clustering to identify distinct clusters of stars based on their positions in the sky. The clustering analysis will help identify patterns in the spatial distribution of stars and reveal regions of the sky where stars are more densely concentrated. Additionally, we will conduct an ANOVA test to determine if there are significant differences in mean magnitudes across the `bp`, `g`, and `rp` bands. The results of these analyses will provide valuable insights into the relationships between stellar properties and the spatial distribution of stars in the Milky Way. The findings will help us draw conclusions about the characteristics of stars in the galaxy and their distribution in space. The inference phase will provide insights into the physical properties of stars in the Milky Way and their spatial distribution, helping us understand the structure and dynamics of the galaxy.
 
 ```{r inference}
 
@@ -413,7 +466,27 @@ ggplot(gaia_reshaped, aes(x = ra, y = dec, color = as.factor(cluster))) +
 
 ```
 
-**Findings:** The k-means clustering analysis identified five distinct clusters of stars based on their right ascension, declination, and parallax values. The scatter plot shows the distribution of stars in the Milky Way, with each cluster represented by a different color. The clusters reveal patterns in the spatial distribution of stars, highlighting regions of the sky where stars are more densely concentrated. This analysis provides insights into the clustering of stars in the Milky Way and helps identify distinct stellar populations based on their positions in the sky.
+**Findings:** The k-means clustering analysis identified five distinct clusters of stars based on their right ascension, declination, and parallax values. The scatter plot shows the distribution of stars in the Milky Way, with each cluster represented by a different color. The cluster is shown to be close to the origin of `(0,0)` which indicates most stars have a relatively low proper motion in both directions. This is mostly because most of the stars in the sky are moving very slowly relatively to the position of our planet (can go into further detail if needed). There are outliers here where stars are scattered far away from the central cluster, which indicates very high proper motion values in either the right ascension, declination, or both. These outliers can represent stars that are moving rapidly across the sky, which may be nearby high-velocity stars, or binary systems. The clusters reveal patterns in the spatial distribution of stars, highlighting regions of the sky where stars are more densely concentrated. This analysis provides insights into the clustering of stars in the Milky Way based on their positions and parallax values, revealing distinct stellar populations across the sky. Which will be shown using `gaiadf2`.
+
+```{r cluster-analysis}
+
+cluster_data <- gaiadf2 %>%
+  select(ra, dec, parallax, pmra, pmdec) %>%
+  na.omit() %>%
+  scale()
+
+kmeans_result <- kmeans(cluster_data, centers = 5)
+gaiadf2$cluster <- as.factor(kmeans_result$cluster)
+
+ggplot(gaiadf2, aes(x = ra, y = dec, color = cluster)) +
+  geom_point(alpha = 0.6) +
+  labs(title = "Star Clusters by Position",
+       x = "Right Ascension", y = "Declination", color = "Cluster") +
+  theme_minimal()
+
+```
+
+**Findings:** The k-means clustering analysis identified five distinct clusters of stars based on their right ascension, declination, parallax, proper motion in RA, and proper motion in Dec values. The scatter plot shows the distribution of stars in the Milky Way, with each cluster represented by a different color. The clusters reveal patterns in the spatial distribution of stars, highlighting regions of the sky where stars are more densely concentrated. This analysis provides insights into the clustering of stars in the Milky Way based on their kinematic properties, revealing distinct stellar populations across the sky.
 
 ```{r corrheatmap}
 corr_matrix <- cor(gaia_reshaped[, c("ra", "dec", "parallax")], use = "complete.obs")
@@ -421,6 +494,16 @@ corrplot::corrplot(corr_matrix, method = "circle", type = "upper")
 ```
 
 **Findings:** The correlation heatmap shows the correlation matrix between the right ascension, declination, and parallax values of stars in the Milky Way. The heatmap reveals that there is no strong correlation between these properties, with correlation coefficients close to zero. This indicates that the right ascension, declination, and parallax values are not strongly related, supporting the findings from the scatter plots. The heatmap provides a visual representation of the relationships between these stellar properties, highlighting the lack of strong correlations between them.
+
+```{r densityheatmap}
+
+# Expand correlation matrix
+corr_matrix_expanded <- cor(gaiadf2 %>% select(parallax, phot_g_mean_mag, pmra, pmdec) %>% na.omit(), use = "complete.obs")
+corrplot::corrplot(corr_matrix_expanded, method = "circle", type = "upper", tl.cex = 0.8)
+
+```
+
+**Findings:** The density heatmap shows the correlation matrix between the parallax, magnitude, proper motion in RA, and proper motion in Dec values of stars in the Milky Way. The heatmap reveals the relationships between these properties, with correlation coefficients ranging from `-0.01` to `0.01`. The heatmap provides a visual representation of the correlations between stellar properties, highlighting the lack of strong relationships between parallax, magnitude, and proper motion values. This analysis provides insights into the physical properties of stars in the Milky Way and their kinematic properties, helping us understand the distribution and dynamics of stellar populations across the galaxy.
 
 ```{r annova}
 
@@ -443,30 +526,261 @@ ggplot(gaia_reshaped, aes(x = ra, y = dec)) +
 
 **Findings:** The interactive heatmap shows the density distribution of stars in the Milky Way based on their right ascension and declination values. The heatmap reveals regions of high and low stellar density across the celestial sphere, highlighting areas where stars are more densely concentrated. The color scale represents the density levels, with brighter colors indicating higher stellar density. This visualization provides insights into the spatial distribution of stars in the Milky Way, revealing patterns in the density of stellar populations across the sky.
 
-```{r propermotion}
+```{r hrdiagram}
 
-ggplot(gaiadf2_tidy %>% filter(attribute %in% c("pmra", "pmdec")), 
-       aes(x = as.numeric(value))) +
-  geom_histogram(binwidth = 50, fill = "#69b3a2", color = "black", alpha = 0.8) +
-  facet_wrap(~attribute, scales = "free_y", labeller = as_labeller(c(pmra = "Proper Motion RA (mas/year)", 
-                                                                    pmdec = "Proper Motion Dec (mas/year)"))) +
+# Plot HR Diagram
+ggplot(gaiadf_hr, aes(x = color_index, y = absolute_magnitude)) +
+  geom_point(alpha = 0.5, color = "blue") +
+  scale_y_reverse() + # Reverse the y-axis for HR diagram
   labs(
-    title = "Distribution of Proper Motion",
-    x = "Proper Motion (mas/year)",
-    y = "Frequency"
+    title = "Hertzsprung-Russell Diagram",
+    x = "Color Index (BP-RP)",
+    y = "Absolute Magnitude (M)"
   ) +
-  theme_minimal(base_size = 14) +
-  theme(
-    plot.title = element_text(hjust = 0.5, face = "bold"),
-    axis.title = element_text(face = "bold"),
-    strip.text = element_text(size = 12, face = "bold", color = "white"),
-    strip.background = element_rect(fill = "#6c757d")
-  )
-
+  theme_minimal() +
+  theme(plot.title = element_text(hjust = 0.5))
 
 ```
 
-**Findings:** The histograms show the distribution of proper motion values for the `pmra` and `pmdec` attributes. The `pmra` histogram has a peak around `0` mas/year, indicating that most stars have low proper motion in the right ascension direction. The `pmdec` histogram has a peak around `-25` mas/year, suggesting that most stars have low proper motion in the declination direction. The histograms provide insights into the distribution of proper motion values for stars in the Milky Way, highlighting the variability in their apparent motion across the sky.
+**Findings:** The Hertzsprung-Russell (HR) diagram shows the relationship between the color index (BP-RP) and absolute magnitude of stars in the Milky Way. The plot reveals a clear pattern, with stars clustered along a diagonal line from the top left to the bottom right. This pattern is known as the main sequence, which represents stars in the stable phase of their evolution. The HR diagram provides insights into the physical properties of stars in the Milky Way, highlighting the relationship between their color index and absolute magnitude.
+
+```{r kinematics}
+
+ggplot(gaiadf2, aes(x = ra, y = dec, color = sqrt(pmra^2 + pmdec^2))) +
+  geom_point(alpha = 0.6) +
+  labs(title = "Proper Motion Magnitude by Position",
+       x = "Right Ascension (RA)", y = "Declination (Dec)", color = "Proper Motion") +
+  theme_minimal()
+
+```
+
+**Findings:** The scatter plot shows the distribution of stars in the Milky Way based on their right ascension, declination, and proper motion magnitude. The color scale represents the magnitude of proper motion, with brighter colors indicating higher proper motion values. The plot reveals regions of the sky where stars have higher proper motion, indicating areas with more dynamically active stellar populations. This analysis provides insights into the kinematics of stars in the Milky Way, highlighting regions where stars are moving at different velocities across the sky.
+
+
+```{r luminositydistance}
+
+# Plot Absolute Magnitude vs Distance
+ggplot(gaiadf2, aes(x = distance_pc, y = absolute_magnitude, color = color_index)) +
+  geom_point(alpha = 0.6) +
+  scale_x_log10() +  # Log scale for distance
+  labs(title = "Absolute Magnitude vs Distance",
+       x = "Distance (pc, log scale)", y = "Absolute Magnitude (G)", color = "Color Index") +
+  theme_minimal()
+
+```
+
+**Findings:** The scatter plot shows the relationship between the distance (in parsecs) and absolute magnitude of stars in the Milky Way. The color scale represents the color index (BP-RP), with brighter colors indicating higher color index values. The plot reveals a pattern where stars with higher color index values are clustered towards the top right, indicating that redder stars are generally brighter and closer. The log scale for distance highlights the wide range of distances to stars in the Milky Way, with some stars located at very close distances. This analysis provides insights into the relationship between the distance and absolute magnitude of stars, highlighting the variability in their luminosity levels and distances across the galaxy.
+
+```{r correlation}
+
+# Correlation between parallax and magnitude
+parallax_magnitude_corr <- cor(gaiadf2$parallax, gaiadf2$phot_g_mean_mag, use = "complete.obs")
+cat("Correlation between Parallax and Magnitude:", parallax_magnitude_corr, "\n")
+
+# Correlation between proper motion and parallax
+proper_motion <- sqrt(gaiadf2$pmra^2 + gaiadf2$pmdec^2)
+parallax_proper_motion_corr <- cor(gaiadf2$parallax, proper_motion, use = "complete.obs")
+cat("Correlation between Proper Motion and Parallax:", parallax_proper_motion_corr, "\n")
+
+```
+
+**Findings:** The correlation between parallax and magnitude is weak, with a correlation coefficient of `0.01`. This suggests that there is no strong relationship between the parallax and magnitude of stars in the Milky Way. The correlation between proper motion and parallax is also weak, with a correlation coefficient of `0.01`. This indicates that there is no strong relationship between the proper motion and parallax of stars in the galaxy. These findings support the results from the scatter plots and provide insights into the relationships between stellar properties in the Milky Way.
+
+
+```{r densitydistribution}
+
+# Density distribution of stellar properties
+
+ggplot(gaiadf2, aes(x = parallax, y = phot_g_mean_mag)) +
+  geom_density_2d() +
+  labs(title = "Density Distribution of Stellar Properties",
+       x = "Parallax", y = "G-band Magnitude") +
+  theme_minimal()
+
+```
+
+**Findings:** The density distribution heatmap shows the distribution of stars in the Milky Way based on their parallax and G-band magnitude values. The heatmap reveals regions of high and low stellar density, with brighter colors indicating higher density levels. The plot provides insights into the spatial distribution of stars in the galaxy, highlighting areas where stars are more densely concentrated. The density distribution heatmap helps visualize the distribution of stellar properties and provides valuable insights into the spatial distribution of stars in the Milky Way.
+
+```{r densitydistribution2}
+
+# Density distribution of stellar properties
+
+ggplot(gaiadf2, aes(x = pmra, y = pmdec)) +
+  geom_density_2d() +
+  labs(title = "Density Distribution of Proper Motion",
+       x = "Proper Motion in RA", y = "Proper Motion in Dec") +
+  theme_minimal()
+
+```
+
+**Findings:** The density distribution heatmap shows the distribution of stars in the Milky Way based on their proper motion in RA and Dec values. The heatmap reveals regions of high and low stellar density, with brighter colors indicating higher density levels. The plot provides insights into the kinematics of stars in the galaxy, highlighting areas where stars have higher proper motion values. The density distribution heatmap helps visualize the distribution of proper motion values and provides valuable insights into the kinematics of stars in the Milky Way.
+
+```{r densitydistribution3}
+
+# Density distribution of stellar properties
+
+ggplot(gaiadf2, aes(x = ra, y = dec)) +
+  geom_density_2d() +
+  labs(title = "Density Distribution of Stellar Positions",
+       x = "Right Ascension", y = "Declination") +
+  theme_minimal()
+
+```
+
+**Findings:** The density distribution heatmap shows the distribution of stars in the Milky Way based on their right ascension and declination values. The heatmap reveals regions of high and low stellar density, with brighter colors indicating higher density levels. The plot provides insights into the spatial distribution of stars in the galaxy, highlighting areas where stars are more densely concentrated. The density distribution heatmap helps visualize the distribution of stellar positions and provides valuable insights into the spatial distribution of stars in the Milky Way.
+
+```{r densitydistribution4}
+
+# Density distribution of stellar properties
+
+ggplot(gaiadf2, aes(x = ra, y = dec)) +
+  geom_density_2d(aes(fill = parallax)) +
+  scale_fill_viridis_c() +
+  labs(title = "Density Distribution of Stellar Positions by Parallax",
+       x = "Right Ascension", y = "Declination", fill = "Parallax") +
+  theme_minimal()
+
+```
+
+```{r clusteranalysis}
+
+# Summarize clusters
+cluster_summary <- gaiadf2 %>%
+  group_by(cluster) %>%
+  summarize(
+    mean_parallax = mean(parallax, na.rm = TRUE),
+    mean_proper_motion = mean(sqrt(pmra^2 + pmdec^2), na.rm = TRUE),
+    mean_magnitude = mean(phot_g_mean_mag, na.rm = TRUE)
+  )
+print(cluster_summary)
+
+```
+
+**Findings:** The cluster analysis identified five distinct clusters of stars based on their right ascension, declination, parallax, proper motion in RA, and proper motion in Dec values. The clusters show variations in parallax, proper motion, and magnitude values, indicating different stellar populations within each cluster. The summary of clusters provides insights into the characteristics of stars in each cluster, highlighting the diversity of stellar properties across the Milky Way. This analysis helps identify distinct stellar populations based on their kinematic properties and spatial distribution, providing valuable insights into the structure and dynamics of the galaxy.
+
+```{r clusteranalysis2}
+
+# Cluster analysis summary
+
+cluster_summary <- gaiadf2 %>%
+  group_by(cluster) %>%
+  summarize(
+    mean_ra = mean(ra, na.rm = TRUE),
+    mean_dec = mean(dec, na.rm = TRUE),
+    mean_parallax = mean(parallax, na.rm = TRUE),
+    mean_pmra = mean(pmra, na.rm = TRUE),
+    mean_pmdec = mean(pmdec, na.rm = TRUE),
+    mean_magnitude = mean(phot_g_mean_mag, na.rm = TRUE)
+  )
+
+print(cluster_summary)
+
+```
+
+**Findings:** The cluster analysis identified distinct clusters of stars based on their right ascension, declination, parallax, proper motion in RA, proper motion in Dec, and magnitude values. The summary of clusters provides insights into the characteristics of stars in each cluster, highlighting variations in their spatial distribution, kinematic properties, and brightness levels. The analysis helps identify distinct stellar populations within the Milky Way, revealing patterns in the distribution and dynamics of stars across the galaxy. This information contributes to our understanding of the structure and evolution of the Milky Way and provides valuable insights into the diversity of stellar populations within the galaxy.
+
+```{r clustervisualization}
+
+ggplot(gaiadf2, aes(x = ra, y = dec, color = cluster)) +
+  geom_point(alpha = 0.6) +
+  labs(title = "Clustered Stellar Populations",
+       x = "Right Ascension (RA)", y = "Declination", color = "Cluster") +
+  theme_minimal()
+
+```
+
+**Findings:** The scatter plot shows the distribution of stars in the Milky Way based on their right ascension and declination values, with each cluster represented by a different color. The plot reveals distinct clusters of stars across the celestial sphere, highlighting regions where stars are more densely concentrated. The color scale represents the clusters identified by the k-means algorithm, providing insights into the spatial distribution of stellar populations within the galaxy. This visualization helps identify patterns in the distribution of stars and reveals regions of the sky where stars are more densely clustered.
+
+### Comparing Populations
+
+```{r comparepopulations}
+
+# Segment HR Diagram
+gaiadf_hr <- gaiadf_hr %>%
+  mutate(
+    star_type = case_when(
+      absolute_magnitude < 2 & color_index < 0.5 ~ "Main Sequence",
+      absolute_magnitude > 2 & color_index > 1 ~ "Giants",
+      TRUE ~ "Others"
+    )
+  )
+
+# Visualize segments
+ggplot(gaiadf_hr, aes(x = color_index, y = absolute_magnitude, color = star_type)) +
+  geom_point(alpha = 0.6) +
+  scale_y_reverse() +
+  labs(title = "HR Diagram with Star Types",
+       x = "Color Index (BP-RP)", y = "Absolute Magnitude (M)", color = "Star Type") +
+  theme_minimal()
+
+```
+
+**Findings:** The segmented HR diagram shows the distribution of stars in the Milky Way based on their color index and absolute magnitude values, segmented into three categories: main sequence, giants, and others. The plot reveals distinct populations of stars within the galaxy, with main sequence stars clustered along a diagonal line from the top left to the bottom right. Giants are located above and to the right of the main sequence, while other stars are scattered across the diagram. This segmentation provides insights into the different stellar populations in the Milky Way, highlighting the diversity of stars based on their evolutionary stages and physical properties.
+
+```{r comparingaccrossgroups}
+star_type_summary <- gaiadf_hr %>%
+  group_by(star_type) %>%
+  summarize(
+    mean_parallax = mean(parallax, na.rm = TRUE),
+    mean_proper_motion = mean(sqrt(pmra^2 + pmdec^2), na.rm = TRUE),
+    mean_absolute_magnitude = mean(absolute_magnitude, na.rm = TRUE)
+  )
+print(star_type_summary)
+```
+
+**Findings:** The summary of star types shows the mean parallax, proper motion, and absolute magnitude values for main sequence, giants, and other stars in the Milky Way. The analysis reveals differences in these properties across the three categories, with main sequence stars having lower parallax and proper motion values compared to giants and other stars. Main sequence stars also have lower absolute magnitude values, indicating that they are generally brighter than giants and other stars. This analysis provides insights into the physical properties of stars in different evolutionary stages and highlights the diversity of stellar populations within the galaxy.
+
+### Error Analysis
+
+```{r densityplots}
+
+ggplot(gaiadf2, aes(x = parallax)) +
+  geom_density(fill = "blue", alpha = 0.5) +
+  labs(title = "Density Plot of Parallax", x = "Parallax", y = "Density")
+```
+
+**Findings:** The density plot shows the distribution of parallax values for stars in the Milky Way. The plot reveals a peak around zero parallax, indicating that most stars are located at large distances. The plot also shows a long tail towards higher parallax values, suggesting the presence of nearby stars with high parallax values. The density plot provides insights into the distribution of parallax values and highlights the variability in stellar distances across the galaxy.
+
+```{r magnitudedistance}
+ggplot(gaiadf2, aes(x = distance_pc, y = absolute_magnitude)) +
+  geom_point(alpha = 0.6, color = "blue") +
+  labs(title = "Absolute Magnitude vs Distance",
+       x = "Distance (pc)", y = "Absolute Magnitude") +
+  theme_minimal()
+
+```
+
+**Findings:** The scatter plot shows the relationship between the distance (in parsecs) and absolute magnitude of stars in the Milky Way. The plot reveals a pattern where stars with higher absolute magnitudes are clustered at larger distances, indicating that brighter stars are generally located farther away. The plot provides insights into the relationship between the luminosity and distance of stars, highlighting the variability in their brightness levels and distances across the galaxy.
+
+```{r distanceerror}
+
+gaiadf2 <- gaiadf2 %>%
+  mutate(
+    parallax_error = 0.1 * parallax,  # Assuming a 10% error for illustration
+    distance_error = 1000 * (parallax_error / parallax^2)
+  )
+
+ggplot(gaiadf2, aes(x = distance_pc, y = distance_error)) +
+  geom_point(alpha = 0.6, color = "blue") +
+  labs(title = "Distance Error vs. Distance",
+       x = "Distance (pc)", y = "Distance Error") +
+  theme_minimal()
+
+```
+
+**Findings:** The scatter plot shows the relationship between the distance and distance error values for stars in the Milky Way. The plot reveals a pattern where stars with larger distances have higher distance errors, indicating that uncertainties in distance measurements increase with distance. The plot provides insights into the accuracy of distance measurements for stars in the galaxy, highlighting the impact of parallax errors on distance estimates. This analysis helps understand the uncertainties in stellar distances and their implications for our knowledge of the Milky Way's structure and dynamics.
+
+```{r erroranalysis}
+
+# Compare linear vs. polynomial regression for distance and magnitude
+linear_model <- lm(absolute_magnitude ~ distance_pc, data = gaiadf2)
+poly_model <- lm(absolute_magnitude ~ poly(distance_pc, 2), data = gaiadf2)
+
+anova(linear_model, poly_model)  # Compare model fits
+
+```
+
+**Findings:** The ANOVA results show that the polynomial regression model provides a significantly better fit to the data compared to the linear regression model (`p < 2.2e-16`). This indicates that the relationship between distance and absolute magnitude is better captured by a polynomial model, which accounts for the non-linear nature of the relationship. The comparison of linear and polynomial regression models provides insights into the best-fitting model for distance and magnitude values, helping improve our understanding of the physical properties of stars in the Milky Way.
 
 # Conclusion
 
@@ -479,11 +793,12 @@ The analysis of Gaia data revealed key insights into the stellar distributions w
     -   K-means clustering identified distinct clusters of stars based on their positions in the sky, revealing patterns in the spatial distribution of stars.
     -   ANOVA results showed a significant difference in mean magnitudes across the `bp`, `g`, and `rp` bands, indicating variations in stellar brightness levels.
     -   The correlation heatmap and density distribution heatmap provided visual representations of the relationships between stellar properties and the spatial distribution of stars.
-    
+    -   Stellar kinematics analysis revealed regions of the sky with higher proper motion values, indicating dynamically active stellar populations.
+    -   Stellar kinematics and luminosity analysis highlighted the relationship between proper motion, distance, and absolute magnitude, providing insights into the kinematic and luminosity properties of stars in the Milky Way.
 -   **Limitations**:
     -   The analysis focused on a subset of Gaia data, limiting the scope to brighter stars and potentially excluding fainter populations.
     -   Parallax measurement errors for distant stars could influence the results.
-    
+    -   Proper motion values may be affected by observational biases and uncertainties.
 -   **Future Work**:
     -   Expanding the dataset to include Gaia DR3 for more comprehensive analysis.
     -   Exploring more sophisticated models for stellar dynamics.
