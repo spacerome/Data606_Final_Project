@@ -89,7 +89,12 @@ gaiadf2 <- data.frame(read.csv(text=rawgaia2, sep= "\t", stringsAsFactors = FALS
 
 ## Data Preparation
 
-The data preparation phase involves cleaning and transforming the raw data to make it suitable for analysis. This includes handling missing values, removing duplicates, and transforming variables as needed.
+The data preparation phase involves cleaning and transforming the raw data to make it suitable for analysis. This includes handling missing values, removing duplicates, and transforming variables as needed. The data preparation phase ensures that the data is in a format that can be used for exploratory analysis and inference. The following steps will be taken to prepare the data for analysis:
+
+-   Load the raw data into R.
+-   Check for missing values and handle them as needed.
+-   Remove duplicates and filter out irrelevant columns.
+-   Transform the data into a tidy format for analysis.
 
 ```{r datacleaning}
 
@@ -176,6 +181,8 @@ magnitude_parallax <- gaiadf_tidy %>%
 ```
 
 # Exploratory Data Analysis
+
+The exploratory data analysis phase involves visualizing the data to identify patterns, trends, and relationships between variables. This phase provides insights into the distribution of stellar properties and helps guide further analysis. We will explore the distribution of parallax, magnitude, right ascension, and declination values to understand the characteristics of stars in the Milky Way. The analysis will include histograms, boxplots, and scatter plots to visualize the data and identify patterns in the distributions. The findings from this analysis will inform the subsequent inference phase, where we will draw conclusions based on the data. The exploratory data analysis will provide insights into the spatial and kinematic distribution of stars in the Milky Way and help identify relationships between stellar properties. The visualizations will help interpret the data and guide further analysis.
 
 ```{r eda}
 
@@ -346,7 +353,7 @@ ggplot(parallax_magnitude, aes(x = as.numeric(parallax), y = as.numeric(phot_g_m
 
 # Inference
 
-The inference phase involves analyzing relationships between stellar properties and drawing conclusions based on the data. We will explore the correlation between parallax and magnitude, as well as proper motion and parallax, to understand the relationships between these properties. This analysis will provide insights into the physical properties of stars in the Milky Way and their distribution in space.
+The inference phase involves analyzing relationships between stellar properties and drawing conclusions based on the data. We will explore the correlation between parallax and magnitude, as well as proper motion and parallax, to understand the relationships between these properties. This analysis will provide insights into the physical properties of stars in the Milky Way and their distribution in space. We will also perform k-means clustering to identify distinct clusters of stars based on their positions in the sky. The clustering analysis will help identify patterns in the spatial distribution of stars and reveal regions of the sky where stars are more densely concentrated. Additionally, we will conduct an ANOVA test to determine if there are significant differences in mean magnitudes across the `bp`, `g`, and `rp` bands. The results of these analyses will provide valuable insights into the relationships between stellar properties and the spatial distribution of stars in the Milky Way. The findings will help us draw conclusions about the characteristics of stars in the galaxy and their distribution in space. The inference phase will provide insights into the physical properties of stars in the Milky Way and their spatial distribution, helping us understand the structure and dynamics of the galaxy. 
 
 ```{r inference}
 
